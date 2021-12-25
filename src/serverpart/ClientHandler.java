@@ -1,5 +1,4 @@
 package serverpart;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -12,13 +11,16 @@ public class ClientHandler {
     private DataOutputStream out;
 
     private String name;
+    boolean clientIsAuthorized;
 
     public String getName() {
         return name;
     }
 
-    public ClientHandler(MyServer myServer, Socket socket) {
-        try {
+    public ClientHandler(MyServer myServer, Socket socket, int timeout) {
+       timeoutChecker(timeout);
+
+        try{
             this.myServer = myServer;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
@@ -39,7 +41,30 @@ public class ClientHandler {
         }
     }
 
+    private void timeoutChecker(int timeout) {
+        new Thread(() -> {
+            System.out.println("Отсчет таймаута начался");
+            try {
+                long startTime = System.currentTimeMillis();
+                while (true) {
+                    if (clientIsAuthorized) {
+                        break;
+                    }
+                    long deltaTime = System.currentTimeMillis() - startTime;
+                    if (deltaTime > timeout && !clientIsAuthorized) {
+                        throw new RuntimeException("Клиент не успел авторизоваться, соединение разорвано");
+                    }
+                }
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+                closeConnection();
+            }
+        }).start();
+        }
+
+
     public void authentication() throws IOException {
+
         while (true) {
             String str = in.readUTF();
             if (str.startsWith("/auth")) {
@@ -49,8 +74,9 @@ public class ClientHandler {
                     if (!myServer.isNickBusy(nick)) {
                         sendMsg("/authok " + nick);
                         name = nick;
-                        myServer.broadcastMsg(name + " зашел в чат",name);
+                        myServer.authMsg(this);
                         myServer.subscribe(this);
+                        clientIsAuthorized = true;
                         return;
                     } else {
                         sendMsg("Учетная запись уже используется");
@@ -65,15 +91,14 @@ public class ClientHandler {
     public void readMessages() throws IOException {
         while (true) {
             String strFromClient = in.readUTF();
-            System.out.println("от " + name + ": " + strFromClient);
             if (strFromClient.equals("/end")) {
                 return;
             }
             if (strFromClient.startsWith("/w")) {
                 String[] parts = strFromClient.split("\\s",3);
-                myServer.privateMsg("личное сообщение от " + name + ": " + parts[2], parts[1]);
+                myServer.privateMsg( parts[2], parts[1], this);
             } else {
-                myServer.broadcastMsg(name + ": " + strFromClient, name);
+                myServer.broadcastMsg(strFromClient, this);
             }
         }
     }
@@ -87,8 +112,9 @@ public class ClientHandler {
     }
 
     public void closeConnection() {
+        sendMsg("/end");
         myServer.unsubscribe(this);
-        myServer.broadcastMsg(name + " вышел из чата",name);
+        if (clientIsAuthorized) myServer.logoutMsg(this);
         try {
             in.close();
         } catch (IOException e) {

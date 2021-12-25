@@ -40,6 +40,9 @@ public class Client {
                             chatUI = new ChatUI(createSendButtonListener());
                             break;
                         }
+                        if(strFromServer.startsWith("/end")) {
+                            authUI.dispose();
+                        }
                         authUI.appendText(strFromServer);
                     }
                     while (true) {
@@ -87,7 +90,6 @@ public class Client {
                 public void actionPerformed(ActionEvent e) {
                     try{
                         out.writeUTF(chatUI.getNewMessage());
-                        chatUI.addMessage("Вы написали: "+ chatUI.getNewMessage());
                         if (chatUI.getNewMessage().equals("/end")){
                             chatUI.dispose();
                         }
