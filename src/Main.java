@@ -33,16 +33,24 @@ public class Main {
         System.arraycopy(arr, 0, a1, 0, H);
         System.arraycopy(arr, H, a2, 0, H);
 
-        Thread thread1 = new Thread(()->{
-            for (int i = 0; i < H; i++) {
-                a1[i] = (float) (a1[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
-            }
-        });
-        Thread thread2 = new Thread(()->{
-            for (int i = 0; i < H; i++) {
-                a2[i] = (float) (a2[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
-            }
-        });
+        try {
+            Thread thread1 = new Thread(() -> {
+                for (int i = 0; i < H; i++) {
+                    a1[i] = (float) (a1[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
+                }
+            });
+            thread1.start();
+            Thread thread2 = new Thread(() -> {
+                for (int i = 0; i < H; i++) {
+                    a2[i] = (float) (a2[i] * Math.sin(0.2f + i / 5) * Math.cos(0.2f + i / 5) * Math.cos(0.4f + i / 2));
+                }
+            });
+            thread2.start();
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e){
+            e.printStackTrace();
+        }
         System.arraycopy(a1, 0, arr, 0, H);
         System.arraycopy(a2, 0, arr, H, H);
         System.out.println(System.currentTimeMillis()-a);
