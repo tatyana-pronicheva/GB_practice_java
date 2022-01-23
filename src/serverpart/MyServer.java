@@ -10,7 +10,8 @@ public class MyServer {
     private final int PORT = 8189;
 
     private List<ClientHandler> clients;
-    private BaseAuthService authService = new BaseAuthService();
+    private BaseAuthService authService;
+    private DatabaseReader dbReader;
 
     public BaseAuthService getAuthService() {
         return authService;
@@ -18,7 +19,9 @@ public class MyServer {
 
     public MyServer() {
         try (ServerSocket server = new ServerSocket(PORT)) {
-            BaseAuthService authService = new BaseAuthService();
+            dbReader = new DatabaseReader();
+            dbReader.start();
+            authService = new BaseAuthService(dbReader);
             authService.start();
             clients = new ArrayList<>();
             while (true) {
@@ -33,6 +36,7 @@ public class MyServer {
             if (authService != null) {
                 authService.stop();
             }
+            dbReader.stop();
         }
     }
 
