@@ -2,18 +2,19 @@ package clientpart;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.util.ArrayList;
 
 public class ChatUI extends JFrame {
     private JTextArea chatArea;
     private JTextField msgInputField;
 
-    public ChatUI(ActionListener sendButtonListener){
+    public ChatUI(ActionListener sendButtonListener, WindowAdapter windowAdapter){
     // Параметры окна
     setBounds(300,400, 500, 500);
     setTitle("Чат");
-    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+    this.addWindowListener(windowAdapter);
 
     // Текстовое поле для вывода сообщений
     chatArea = new JTextArea();
@@ -34,12 +35,24 @@ public class ChatUI extends JFrame {
 
     }
     public void addMessage(String message){
-        chatArea.setText(chatArea.getText()+"\n"+message);
+        chatArea.setText(chatArea.getText() + message + "\n");
     }
     public String getNewMessage(){
         return msgInputField.getText();
     }
     public void clearInputField(){
         msgInputField.setText("");
+    }
+
+    public void addMessages(ArrayList<String> messagesArray){
+        String messagesText = "";
+        for (String message : messagesArray) {
+            messagesText= messagesText + message + "\n";
+        }
+        chatArea.setText(messagesText);
+    }
+    public String[] getAllMessages(){
+        String[] messages = chatArea.getText().split("\\n");
+        return messages;
     }
 }

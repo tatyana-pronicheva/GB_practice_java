@@ -2,6 +2,8 @@ package clientpart;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -16,6 +18,8 @@ public class Client {
     boolean authorized;
     AuthUI authUI;
     ChatUI chatUI;
+    String userId;
+    MessageStorage messageStorage;
 
     void setAuthorized(boolean b){
         authorized = b;
@@ -37,7 +41,9 @@ public class Client {
                         if(strFromServer.startsWith("/authok")) {
                             setAuthorized(true);
                             authUI.dispose();
-                            chatUI = new ChatUI(createSendButtonListener());
+                            chatUI = new ChatUI(createSendButtonListener(),createWindowAdapter());
+                            messageStorage = new MessageStorage(userId);
+                            chatUI.addMessages(messageStorage.getMessagesHistory());
                             break;
                         }
                         if(strFromServer.startsWith("/end")) {
@@ -48,6 +54,7 @@ public class Client {
                     while (true) {
                         String strFromServer = in.readUTF();
                         if (strFromServer.equalsIgnoreCase("/end")) {
+                            messageStorage.saveMessagesHistory(chatUI.getAllMessages());
                             break;
                         }
                         chatUI.addMessage(strFromServer);
@@ -68,6 +75,7 @@ public class Client {
 
     private void onAuthClick() {
         try {
+            userId = authUI.getLogin();
             out.writeUTF("/auth " + authUI.getLogin() + " " + authUI.getPassword());
             authUI.clearLoginField();
             authUI.clearPasswordField();
@@ -91,6 +99,7 @@ public class Client {
                     try{
                         out.writeUTF(chatUI.getNewMessage());
                         if (chatUI.getNewMessage().equals("/end")){
+                            messageStorage.saveMessagesHistory(chatUI.getAllMessages());
                             chatUI.dispose();
                         }
                         chatUI.clearInputField();
@@ -101,6 +110,15 @@ public class Client {
                 }
             };
         }
+
+        private WindowAdapter createWindowAdapter() {
+        return new WindowAdapter(){
+           public void windowClosing(WindowEvent e){
+               messageStorage.saveMessagesHistory(chatUI.getAllMessages());
+               System.exit(0);
+           }
+       };
+    }
 
     }
 
