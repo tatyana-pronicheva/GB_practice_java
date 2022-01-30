@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MyServer {
     private final int PORT = 8189;
@@ -23,12 +25,13 @@ public class MyServer {
             dbReader.start();
             authService = new BaseAuthService(dbReader);
             authService.start();
+            ExecutorService service = Executors.newCachedThreadPool();
             clients = new ArrayList<>();
             while (true) {
                 System.out.println("Сервер ожидает подключения");
                 Socket socket = server.accept();
                 System.out.println("Клиент подключился");
-                new ClientHandler(this, socket,120000);
+                service.execute(()-> new ClientHandler(this, socket,120000));
             }
         } catch (IOException e) {
             System.out.println("Ошибка в работе сервера");

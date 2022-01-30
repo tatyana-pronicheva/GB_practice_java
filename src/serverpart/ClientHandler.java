@@ -26,7 +26,6 @@ public class ClientHandler {
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
             this.name = "";
-            new Thread(() -> {
                 try {
                     authentication();
                     readMessages();
@@ -35,7 +34,6 @@ public class ClientHandler {
                 } finally {
                     closeConnection();
                 }
-            }).start();
         } catch (IOException e) {
             throw new RuntimeException("Проблемы при создании обработчика клиента");
         }
