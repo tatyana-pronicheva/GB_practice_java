@@ -2,7 +2,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 
 public class MainClass {
-    public static final int CARS_COUNT = 5;
+    public static final int CARS_COUNT = 4;
     static int raceStatus = 0;
     public static boolean winnerExists = false;
 
