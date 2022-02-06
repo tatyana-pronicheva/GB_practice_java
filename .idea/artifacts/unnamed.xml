@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact name="unnamed">
+    <output-path>$PROJECT_DIR$/out/artifacts/unnamed</output-path>
+    <root id="root">
+      <element id="module-output" name="GB_practice_java" />
+      <element id="library" level="project" name="log4j-api-2.17.1" />
+      <element id="library" level="project" name="log4j-core-2.17.1" />
+      <element id="library" level="project" name="sqlite-jdbc-3.36.0.31" />
+    </root>
+  </artifact>
+</component>

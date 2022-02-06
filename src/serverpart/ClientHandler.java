@@ -1,4 +1,7 @@
 package serverpart;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -9,6 +12,7 @@ public class ClientHandler {
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    final Logger LOGGER_CLIENTHANDLER = LogManager.getLogger(ClientHandler.class);
 
     private String name;
     boolean clientIsAuthorized;
@@ -26,22 +30,17 @@ public class ClientHandler {
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
             this.name = "";
-                try {
-                    authentication();
-                    readMessages();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    closeConnection();
-                }
+                authentication();
+                readMessages();
         } catch (IOException e) {
-            throw new RuntimeException("Проблемы при создании обработчика клиента");
+            LOGGER_CLIENTHANDLER.debug("Обработчик клиента закрыт");
+            closeConnection();
         }
     }
 
     private void timeoutChecker(int timeout) {
         new Thread(() -> {
-            System.out.println("Отсчет таймаута начался");
+            LOGGER_CLIENTHANDLER.debug("Отсчет таймаута авторизации начался");
             try {
                 long startTime = System.currentTimeMillis();
                 while (true) {
@@ -54,7 +53,7 @@ public class ClientHandler {
                     }
                 }
             } catch (RuntimeException e) {
-                e.printStackTrace();
+                LOGGER_CLIENTHANDLER.debug(e);
                 closeConnection();
             }
         }).start();
@@ -77,12 +76,15 @@ public class ClientHandler {
                         clientIsAuthorized = true;
                         return;
                     } else {
+                        LOGGER_CLIENTHANDLER.debug("Попытка авторизации на занятую учетку");
                         sendMsg("Учетная запись уже используется");
                     }
                 } else {
+                    LOGGER_CLIENTHANDLER.debug("Попытка авторизации с неверным логпассом");
                     sendMsg("Неверные логин/пароль");
                 }
             }
+
         }
     }
 
@@ -90,13 +92,16 @@ public class ClientHandler {
         while (true) {
             String strFromClient = in.readUTF();
             if (strFromClient.equals("/end")) {
+                LOGGER_CLIENTHANDLER.debug("Клиент "+name+" прислал команду "  + strFromClient);
                 return;
             }
             if (strFromClient.startsWith("/w")) {
                 String[] parts = strFromClient.split("\\s",3);
                 myServer.privateMsg( parts[2], parts[1], this);
+                LOGGER_CLIENTHANDLER.debug("Клиент "+name+" прислал личное сообщение " + strFromClient);
             } else {
                 myServer.broadcastMsg(strFromClient, this);
+                LOGGER_CLIENTHANDLER.debug("Клиент "+name+" прислал сообщение " + strFromClient);
             }
         }
     }
@@ -105,28 +110,29 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER_CLIENTHANDLER.debug("Ошибка при отправке сообщения клиенту "+e);
         }
     }
 
     public void closeConnection() {
-        sendMsg("/end");
+        if (!socket.isClosed()){sendMsg("/end");}
         myServer.unsubscribe(this);
         if (clientIsAuthorized) myServer.logoutMsg(this);
         try {
             in.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER_CLIENTHANDLER.debug("Ошибка при закрытии DataInputStream" + e);
         }
         try {
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER_CLIENTHANDLER.debug("Ошибка при закрытии DataOutputStream" + e);
         }
         try {
             socket.close();
         } catch (IOException e) {
             e.printStackTrace();
+            LOGGER_CLIENTHANDLER.debug("Ошибка при закрытии сокета, к которому подключен клиент" + e);
         }
     }
 }
