@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MyServer {
     private final int PORT = 8189;
@@ -20,7 +22,10 @@ public class MyServer {
     }
 
     public MyServer() {
+        final Logger LOGGER_MYSERVER = LogManager.getLogger(MyServer.class);
+
         try (ServerSocket server = new ServerSocket(PORT)) {
+            LOGGER_MYSERVER.info("ServerSocket открыт успешно");
             dbReader = new DatabaseReader();
             dbReader.start();
             authService = new BaseAuthService(dbReader);
@@ -28,13 +33,13 @@ public class MyServer {
             ExecutorService service = Executors.newCachedThreadPool();
             clients = new ArrayList<>();
             while (true) {
-                System.out.println("Сервер ожидает подключения");
+                LOGGER_MYSERVER.info("Сервер ожидает подключения клиента");
                 Socket socket = server.accept();
-                System.out.println("Клиент подключился");
+                LOGGER_MYSERVER.info("Клиент подключился");
                 service.execute(()-> new ClientHandler(this, socket,120000));
             }
         } catch (IOException e) {
-            System.out.println("Ошибка в работе сервера");
+            LOGGER_MYSERVER.info("Ошибка в работе сервера" + e);
         } finally {
             if (authService != null) {
                 authService.stop();
